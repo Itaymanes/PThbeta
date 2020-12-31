@@ -1,0 +1,10 @@
+TODO:
+    - for more efficient coding, if there is 0 observations DO NOT split the cube further
+    - process="sampling loop":
+        # Solve problems with compiling c
+        # runs the code, most importantly the two inner loops on c
+    - process="pi_map_sample":
+        # runs the pred sampler in batches
+        # runs the pred sampler in multiprocessing
+    - pred_map_sample
+        # make this process availabe to batches
