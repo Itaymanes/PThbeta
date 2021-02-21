@@ -78,6 +78,7 @@ def perm_matrix(p, seg_one_var):
     return empty_mat.astype(np.int8, copy=False)
     # return np.fliplr(empty_mat.astype(np.int8, copy=False))
 
+
 def med_vec_array(dict_of_seg, arr_ind):
     """
     return arrays of mediaan and arrays of vec
@@ -126,7 +127,7 @@ class PThBeta:
         self.L = int(p * self.seg_1dim)  # level of the tree
         self.I = 2 ** self.L  # number of interval in L-level
         # self.weight_vec = np.array([self.intervals_1dim ** i for i in range(p)]) #np.array([4, 1])
-        self.weight_vec = np.flip(np.array([self.intervals_1dim ** i for i in range(p)])) #np.array([4, 1])
+        self.weight_vec = np.flip(np.array([self.intervals_1dim ** i for i in range(p)]))  # np.array([4, 1])
 
     # def _ind_tree(self):
     #     """create indices trees"""
@@ -233,8 +234,8 @@ class PThBeta:
             ax.set_ylabel('Y')
             ax.set_xticks(pd.unique(self.arr_vec[:, 0])[:-1])
             ax.set_yticks(pd.unique(self.arr_vec[:, 1])[:-1])
-            ax.set_xlim(min_vals[0] - 1.2 * (self.diff_vec[0]/2), 1.02 * (self.arr_vec[-1, 0]))
-            ax.set_ylim(min_vals[1] - 1.2 * (self.diff_vec[1]/2), 1.02 * (self.arr_vec[-1, 1]))
+            ax.set_xlim(min_vals[0] - 1.2 * (self.diff_vec[0] / 2), 1.02 * (self.arr_vec[-1, 0]))
+            ax.set_ylim(min_vals[1] - 1.2 * (self.diff_vec[1] / 2), 1.02 * (self.arr_vec[-1, 1]))
             ax.scatter(x=pred_sample[:, 0], y=pred_sample[:, 1], alpha=0.08, s=15, c='blue')
             ax.scatter(x=np_d[:, 0], y=np_d[:, 1], alpha=0.6, s=20, c='red')
             ax.set_title(title)
@@ -254,9 +255,9 @@ class PThBeta:
             ax.set_xticks(pd.unique(self.arr_vec[:, 0])[:-1])
             ax.set_yticks(pd.unique(self.arr_vec[:, 1])[:-1])
             ax.set_zticks(pd.unique(self.arr_vec[:, 2])[:-1])
-            ax.set_xlim(min_vals[0] - 1.2 * (self.diff_vec[0]/2), 1.02 * (self.arr_vec[-1, 0]))
-            ax.set_ylim(min_vals[1] - 1.2 * (self.diff_vec[1]/2), 1.02 * (self.arr_vec[-1, 1]))
-            ax.set_zlim(min_vals[2] - 1.2 * (self.diff_vec[2]/2), 1.02 * (self.arr_vec[-1, 2]))
+            ax.set_xlim(min_vals[0] - 1.2 * (self.diff_vec[0] / 2), 1.02 * (self.arr_vec[-1, 0]))
+            ax.set_ylim(min_vals[1] - 1.2 * (self.diff_vec[1] / 2), 1.02 * (self.arr_vec[-1, 1]))
+            ax.set_zlim(min_vals[2] - 1.2 * (self.diff_vec[2] / 2), 1.02 * (self.arr_vec[-1, 2]))
             ax.scatter3D(pred_sample[:, 0], pred_sample[:, 1], pred_sample[:, 2], alpha=0.08, s=15, c='blue')
             ax.scatter3D(np_d[:, 0], np_d[:, 1], np_d[:, 2], alpha=0.6, s=20, c='red')
             ax.set_title(title)
@@ -340,6 +341,15 @@ class PThBeta:
         flat_list = list(itertools.chain(*l))
         orders = perm(flat_list)
 
+        # # # todo: only temporary -- to be deleted later on
+        # # #   change the level from 9 to 12 (without expanding hugely the permutations)
+        # for i in range(p):
+        #     l.append([i] * int(9 / p))
+        # flat_list = list(itertools.chain(*l))
+        # orders = perm(flat_list)
+        # for i in range(len(orders)):
+        #     orders[i] = orders[i] + (1, 2, 0)
+
         for part_num, order in enumerate(orders):
             d_partitions_int['partition_' + str(part_num + 1)], d_partitions_trees['partition_' + str(part_num + 1)] \
                 = self.segment_trees(order, p=p)
@@ -364,14 +374,14 @@ class PThBeta:
         freq = pd.Series({x + 1: np.sum(interval_map == x) for x in range(self.I)})
 
         d2, d2_trees = self.segment_trees_all_options(p)
-        d2_np = np.array(pd.DataFrame(d2))      # hbeta partitions
+        d2_np = np.array(pd.DataFrame(d2))  # hbeta partitions
 
         print(20 * '*' + '\np={0}, Level={1}, intervals at level-L={2}\nnumber of differet segmentations={3}'
               .format(p, self.L, self.I, d2_np.shape[1]))
 
         n_parts = d2_np.shape[1]  # number of partitions
-        phi_sample = np.empty(shape=(2 * (self.I - 1), n_pts, n_parts), dtype=np.float32)
-        log_node_dist_mat = np.empty((self.I - 1, n_parts), dtype=np.float32)
+        phi_sample = np.empty(shape=(2 * (self.I - 1), n_pts, n_parts), dtype=np.float16)
+        log_node_dist_mat = np.empty((self.I - 1, n_parts), dtype=np.float16)
         timer.stop(process="set_int_coords")
 
         # For each segmentation permutation, generate s (2) posterior samples and compute posterior distribution
@@ -424,9 +434,8 @@ class PThBeta:
 
         # phi_4d_mat = np.empty(shape=(self.L, self.I, n_parts, n_pts))
 
-
-        pi_hBeta_sample = np.empty(shape=(self.I, n_parts, n_pts), dtype=np.float32) # i tried to change it to int
-        pi_map_sample = np.empty(shape=(self.I, n_parts, n_pts), dtype=np.float32) # i tried to change it to int
+        pi_hBeta_sample = np.empty(shape=(self.I, n_parts, n_pts), dtype=np.float16)  # i tried to change it to int
+        pi_map_sample = np.empty(shape=(self.I, n_parts, n_pts), dtype=np.float16)  # i tried to change it to int
 
         timer.start()
         # todo:
@@ -476,15 +485,16 @@ class PThBeta:
         pi_cumsum = np.cumsum(pi_res, axis=0)
 
         u_mat = np.repeat(np.random.uniform(0, 1, size=n_parts * n_pts)[np.newaxis, :], self.I, axis=0)
-        #pred_vec = np.sum(pi_cumsum < u_mat, axis=0)    # ? todo: why i have promlem with 1993??
+        # pred_vec = np.sum(pi_cumsum < u_mat, axis=0)    # ? todo: why i have promlem with 1993??
 
         # todo: I tried something a bit diffenet
-        pred_vec = np.minimum(self.I-1, np.sum(pi_cumsum < u_mat, axis=0))   # ? todo: why i have promlem with 1993??
+        pred_vec = np.minimum(self.I - 1, np.sum(pi_cumsum < u_mat, axis=0))  # ? todo: why i have promlem with 1993??
 
         # pred_vec_2 = self.arr_ind[pred_vec] @ self.weight_vec
         map_pred_vec = self.arr_med[pred_vec] + \
                        (np.random.uniform(0, 1, size=(n_parts * n_pts, p)) - 0.5) * (self.diff_vec)
-        weighted_prob = np.repeat(map_seg_pdist, n_pts) / np.sum(np.repeat(map_seg_pdist, n_pts))
+        weighted_prob = np.repeat(map_seg_pdist, n_pts) / np.sum(np.repeat(map_seg_pdist, n_pts)) #todo: ORIGINAL IS WITH REPEAT -- I get the same result with tile
+        # weighted_prob = np.tile(map_seg_pdist, n_pts) / np.sum(np.tile(map_seg_pdist, n_pts))
         # important sampling
         imp_samp_ind = np.random.choice(n_parts * n_pts, size=n_samples, replace=True, p=weighted_prob)
         return map_pred_vec[imp_samp_ind, :]
@@ -507,6 +517,232 @@ class PThBeta:
         #       - pi_res[0, :5] = pi_map_sample[0, 0, :5] # [cubes, n_parts, n_pts]
         #   HAVE TO CHECK VERY CAREFULLY THAT THE REPEATITION IS DONE RIGHT
         # mix_weights = np.repeat(map_seg_pdist, n_pts) / sum(np.repeat(map_seg_pdist, n_pts))
-        mix_weights = np.tile(map_seg_pdist, n_pts) / sum(np.tile(map_seg_pdist, n_pts))
+        mix_weights = np.tile(map_seg_pdist, n_pts) / sum(np.tile(map_seg_pdist, n_pts)) #todo: Original is with tile
         pi_mixture = pi_res @ mix_weights
         return pi_mixture
+
+    def conditional_expected(self, pi_map_sample, map_seg_pdist,
+                                          quantile_values=np.array([0.025, 0.5, 0.975])):
+        """
+        I SHOULD ADD HERE CUMSUM IN 2 DIMENSION AS WELL ---
+            Needs to think how to have quantiles of the expected value here?!
+        """
+        p = self.diff_vec.shape[0]
+        n_parts, n_pts = pi_map_sample.shape[1], pi_map_sample.shape[2]  # number of partitions, number of
+
+        pi_res = np.reshape(pi_map_sample, (self.I, n_parts * n_pts))  # equvi. to pi_Uxy_sample_2D
+
+        # TODO: I checked and it seems ok till here (including the mix_weights)
+        #   note that I also changed it because run time problem ##
+        mix_weights = np.tile(map_seg_pdist, n_pts) / (np.sum(map_seg_pdist) * n_pts) ##np.sum(np.tile(map_seg_pdist, n_pts))
+        # TODO: # be careful --> NEED TO CHECK IF THIS IS THE RIGHT ORDER
+        #   I CHOSE 'F' since it was the same order as Dani's file in 2D.
+        # pi_mixture = np.reshape(pi_res @ mix_weights, [self.intervals_1dim] * p, order='F')
+
+        # TODO:
+        #   MAYBE a solution for high dimensional:
+        axis_repeat = [self.intervals_1dim, self.intervals_1dim ** (p - 1)]
+        # pi_mixture = np.reshape(pi_res @ mix_weights, axis_repeat, order='F')
+        # pi_y_given_x = pi_mixture / \
+        #                np.reshape(np.tile(np.sum(pi_mixture, axis=0), self.intervals_1dim * (p - 1)),
+        #                           axis_repeat, order='C')
+        # pi_y_cumsum = np.vstack((np.zeros(self.intervals_1dim), np.cumsum(pi_y_given_x, axis=0)))
+        # quantile_mat = np.empty(shape=(quantile_values.shape[0], self.intervals_1dim), dtype=np.float32)
+        # for i in range(self.intervals_1dim ** (p - 1)):
+        #     quantile_mat[:, i] = np.quantile(pi_y_cumsum[:, i], quantile_values)
+        pi_mixture = np.reshape(pi_res @ mix_weights, axis_repeat, order='C')
+        # pi_mix_ch = pi_res @ mix_weights
+        # # # TODO: CHECK FOR HIGHER ORDER -- works well for dim=2 and seg_1dim=2
+        # # pi_fill = np.zeros((4, 4))
+        # # for k in range(16):
+        # #     pi_fill[self.arr_ind[k, :][0], self.arr_ind[k, :][1]] = pi_mix_ch[k]
+
+        # pi_x1_given_xs = pi_mixture / \
+        #                np.reshape(np.tile(np.sum(pi_mixture, axis=1), self.intervals_1dim * (p - 1)),
+        #                           axis_repeat, order='F')
+
+        pi_mixture[pi_mixture < 1e-7] = 1e-7
+        # TODO: above I added an option that the pi_mixture won't be too small.
+        pi_x1_given_xs = pi_mixture / \
+                         np.reshape(np.repeat(np.sum(pi_mixture, axis=0), self.intervals_1dim),
+                                    axis_repeat, order='F')
+        # cumsum
+        # todo: I think it works but I have not checked it... and sure how it can help me
+        pi_x1_cumsum = np.vstack([np.zeros(self.intervals_1dim ** (p - 1)), np.cumsum(pi_x1_given_xs, axis=0)])
+        dict_cumsum_res = dict()
+        for i in range(self.intervals_1dim ** (p - 1)):
+            dict_cumsum_res[i] = np.quantile(pi_x1_cumsum[:, i], quantile_values)
+        df_y_cumsum = pd.concat([pd.DataFrame.from_dict(dict_cumsum_res, orient='index', columns=quantile_values),
+                                 pd.DataFrame(self.arr_med[:self.intervals_1dim ** (p - 1), 1:])], axis=1)
+
+        # expected value
+        y_unique_med = pd.unique(self.arr_med[:, 0])
+        y_weight = np.repeat(y_unique_med, self.intervals_1dim ** (p - 1)).reshape(axis_repeat)
+
+        exp_x1_given_xs = pi_x1_given_xs * y_weight
+        df_y_cond_xs = pd.concat([pd.Series(np.sum(exp_x1_given_xs, axis=0), name='y'),
+                                  pd.DataFrame(self.arr_med[:self.intervals_1dim ** (p - 1), 1:])], axis=1)
+
+
+        return df_y_cond_xs # pd.DataFrame(cumsum_quantile_mat, index=quantile_values), \
+
+    def marginalizing_y(self, pi_map_sample, map_seg_pdist):
+        """
+        """
+        p = self.diff_vec.shape[0]
+        n_parts, n_pts = pi_map_sample.shape[1], pi_map_sample.shape[2]  # number of partitions, number of
+
+        pi_res = np.reshape(pi_map_sample, (self.I, n_parts * n_pts))  # equvi. to pi_Uxy_sample_2D
+
+        # TODO: I checked and it seems ok till here (including the mix_weights)
+        #   note that I also changed it because run time problem ##
+        mix_weights = np.tile(map_seg_pdist, n_pts) / (np.sum(map_seg_pdist) * n_pts) ##np.sum(np.tile(map_seg_pdist, n_pts))
+        # TODO: # be careful --> NEED TO CHECK IF THIS IS THE RIGHT ORDER
+        #   I CHOSE 'F' since it was the same order as Dani's file in 2D.
+        # pi_mixture = np.reshape(pi_res @ mix_weights, [self.intervals_1dim] * p, order='F')
+
+        # TODO:
+        #   MAYBE a solution for high dimensional:
+        axis_repeat = [self.intervals_1dim, self.intervals_1dim ** (p - 1)]
+        # pi_mixture = np.reshape(pi_res @ mix_weights, axis_repeat, order='F')
+        # pi_y_given_x = pi_mixture / \
+        #                np.reshape(np.tile(np.sum(pi_mixture, axis=0), self.intervals_1dim * (p - 1)),
+        #                           axis_repeat, order='C')
+        # pi_y_cumsum = np.vstack((np.zeros(self.intervals_1dim), np.cumsum(pi_y_given_x, axis=0)))
+        # quantile_mat = np.empty(shape=(quantile_values.shape[0], self.intervals_1dim), dtype=np.float32)
+        # for i in range(self.intervals_1dim ** (p - 1)):
+        #     quantile_mat[:, i] = np.quantile(pi_y_cumsum[:, i], quantile_values)
+        pi_mixture = np.reshape(pi_res @ mix_weights, axis_repeat, order='C')
+        # pi_mix_ch = pi_res @ mix_weights
+        # # # TODO: CHECK FOR HIGHER ORDER -- works well for dim=2 and seg_1dim=2
+        # # pi_fill = np.zeros((4, 4))
+        # # for k in range(16):
+        # #     pi_fill[self.arr_ind[k, :][0], self.arr_ind[k, :][1]] = pi_mix_ch[k]
+
+        # pi_x1_given_xs = pi_mixture / \
+        #                np.reshape(np.tile(np.sum(pi_mixture, axis=1), self.intervals_1dim * (p - 1)),
+        #                           axis_repeat, order='F')
+
+        # TODO: THIS IS THE SOULTION FOR THE SIMPLE CASE OF 2 Dimensional,
+        #  I should write carefully the solution of 3 and 4 dimensional
+        # p_x = np.sum(pd.DataFrame(pi_mixture), axis=0)
+        #
+        p_x = pd.concat([pd.Series(np.sum(pd.DataFrame(pi_mixture), axis=0), name='p_x'),
+                         pd.DataFrame(self.arr_med[:self.intervals_1dim ** (p - 1), 1:])], axis=1)
+        return p_x
+
+    def quantile_conditional(self, pi_map_sample, map_seg_pdist, quantile_values=np.array([0.025, 0.5, 0.975]),
+                             n_samples=1000):
+        # TODO: I WAS TRYING TO SAMPLE FROM THE CONDIONAL DISTRIBUTION, BUT IT DID NOT WORK WELL
+        p = self.diff_vec.shape[0]
+        n_parts, n_pts = pi_map_sample.shape[1], pi_map_sample.shape[2]  # number of partitions, number of
+
+        dict_quantile = dict()
+        unique_y = np.unique(self.arr_med[:, 0])
+        pi_res = np.reshape(pi_map_sample, (self.I, n_parts * n_pts))  # equvi. to pi_Uxy_sample_2D
+        for i in range(self.intervals_1dim):
+            pi_y1_given_x = pi_res[i*self.intervals_1dim:(i+1)*self.intervals_1dim, :]
+            pi_cumsum = np.cumsum(pi_y1_given_x, axis=0) / np.cumsum(pi_y1_given_x, axis=0)[-1, :]
+            u_mat = np.repeat(np.random.uniform(0, 1, size=n_parts * n_pts)[np.newaxis, :], self.intervals_1dim, axis=0)
+            pred_vec = np.minimum(self.I - 1, np.sum(pi_cumsum < u_mat, axis=0))
+
+            # todo: I think it is ok, maybe I need to multiply by some element
+            map_pred_vec = unique_y[pred_vec] #+ \
+                           #(np.random.uniform(0, 1, size=(n_parts * n_pts)) - 0.5) * (self.diff_vec[0])
+            weighted_prob = np.repeat(map_seg_pdist, n_pts) / np.sum(np.repeat(map_seg_pdist, n_pts))  # todo: ORIGINAL IS WITH REPEAT -- I get the same result with tile
+            imp_samp_ind = np.random.choice(n_parts * n_pts, size=n_samples, replace=True, p=weighted_prob)
+            dict_quantile[i] = np.quantile(map_pred_vec[imp_samp_ind], q=quantile_values)
+        df_quantile = pd.DataFrame.from_dict(dict_quantile, orient='index', columns=quantile_values)
+        return pd.concat([df_quantile, pd.DataFrame(self.arr_med[:self.intervals_1dim ** (p - 1), 1:])], axis=1)
+
+    # todo: remove the quantile_conditional_distribution
+    def quantile_conditional_distribution(self, pi_map_sample, map_seg_pdist,
+                                          quantile_values=np.array([0.025, 0.5, 0.975])):
+        """
+        NOT USE THIS FUNCTION --- IT DOES NOT WORK WELL!!
+
+        """
+        p = self.diff_vec.shape[0]
+        n_parts, n_pts = pi_map_sample.shape[1], pi_map_sample.shape[2]  # number of partitions, number of
+
+        # pi_map_sample = np.swapaxes(pi_map_sample, 1, 2)
+
+        pi_res = np.reshape(pi_map_sample, (self.I, n_parts * n_pts))  # equvi. to pi_Uxy_sample_2D
+
+        # TODO: I checked and it seems ok till here (including the mix_weights)
+        mix_weights = np.tile(map_seg_pdist, n_pts) / np.sum(np.tile(map_seg_pdist, n_pts))
+        # TODO: # be careful --> NEED TO CHECK IF THIS IS THE RIGHT ORDER
+        #   I CHOSE 'F' since it was the same order as Dani's file in 2D.
+        # pi_mixture = np.reshape(pi_res @ mix_weights, [self.intervals_1dim] * p, order='F')
+
+        # TODO:
+        #   MAYBE a solution for high dimensional:
+        axis_repeat = [self.intervals_1dim, self.intervals_1dim ** (p - 1)]
+        # pi_mixture = np.reshape(pi_res @ mix_weights, axis_repeat, order='F')
+        # pi_y_given_x = pi_mixture / \
+        #                np.reshape(np.tile(np.sum(pi_mixture, axis=0), self.intervals_1dim * (p - 1)),
+        #                           axis_repeat, order='C')
+        # pi_y_cumsum = np.vstack((np.zeros(self.intervals_1dim), np.cumsum(pi_y_given_x, axis=0)))
+        # quantile_mat = np.empty(shape=(quantile_values.shape[0], self.intervals_1dim), dtype=np.float32)
+        # for i in range(self.intervals_1dim ** (p - 1)):
+        #     quantile_mat[:, i] = np.quantile(pi_y_cumsum[:, i], quantile_values)
+        pi_mixture = np.reshape(pi_res @ mix_weights, axis_repeat, order='C')
+        # pi_mix_ch = pi_res @ mix_weights
+        # # # TODO: CHECK FOR HIGHER ORDER -- works well for dim=2 and seg_1dim=2
+        # # pi_fill = np.zeros((4, 4))
+        # # for k in range(16):
+        # #     pi_fill[self.arr_ind[k, :][0], self.arr_ind[k, :][1]] = pi_mix_ch[k]
+
+        # pi_x1_given_xs = pi_mixture / \
+        #                np.reshape(np.tile(np.sum(pi_mixture, axis=1), self.intervals_1dim * (p - 1)),
+        #                           axis_repeat, order='F')
+        pi_x1_given_xs = pi_mixture / \
+                         np.reshape(np.repeat(np.sum(pi_mixture, axis=1), self.intervals_1dim ** (p - 1)),
+                                    axis_repeat, order='C') # todo: This was the original
+
+        pi_x1_given_xs = pi_mixture / \
+                         np.reshape(np.repeat(np.sum(pi_mixture, axis=0), self.intervals_1dim ** (p - 1)),
+                                    axis_repeat, order='F')
+
+
+        pi_x1_cumsum = np.hstack((np.zeros((self.intervals_1dim, 1)), np.cumsum(pi_x1_given_xs, axis=1)))
+        # x1_given_xs_quantile_mat = np.empty(shape=(quantile_values.shape[0], self.intervals_1dim * (p - 1)),
+        #                                     dtype=np.float32)
+        cumsum_quantile_mat = np.empty(shape=(quantile_values.shape[0], self.intervals_1dim * (p - 1)),
+                                       dtype=np.float32)
+        #x1_rng = np.max(self.arr_vec[:, 0]) - np.min(self.arr_vec[:, 0] - self.diff_vec[1:])
+
+        # TODO: WEIGHTS WITH X's --> changed to weights with Y
+        # unique_med = np.array([])
+        # if p == 2:
+        #     for k in range(1, self.arr_med.shape[1]):
+        #         unique_med = np.append(unique_med, pd.unique(self.arr_med[:, k]))
+        # x_weight = np.tile(unique_med, self.intervals_1dim ** (p - 1)).reshape(axis_repeat)
+
+        y_unique_med = pd.unique(self.arr_med[:, 0])
+        y_weight = np.repeat(y_unique_med, self.intervals_1dim ** (p - 1)).reshape(axis_repeat)
+
+        exp_x1_given_xs = pi_x1_given_xs * y_weight
+        df_y_cond_xs = pd.concat([pd.Series(np.sum(exp_x1_given_xs, axis=0), name='y'),
+                                  pd.DataFrame(self.arr_med[:self.intervals_1dim ** (p - 1), 1:])], axis=1)
+        if p == 2:
+            pi_x1_cumsum = pd.DataFrame(np.vstack((np.zeros((1, self.intervals_1dim)), np.cumsum(pi_x1_given_xs, axis=0))))
+            for i in range(self.intervals_1dim ** (p - 1)):
+                cumsum_quantile_mat[:, i] = np.quantile(pi_x1_cumsum[:, i], quantile_values)
+        # for i in range(self.intervals_1dim ** (p - 1)):
+            # x1_given_xs_quantile_mat[:, i] = x1_rng * np.quantile(pi_x1_given_xs[:, i], quantile_values)
+            # x1_given_xs_quantile_mat[:, i] = np.quantile(exp_x1_given_xs[:, i], quantile_values)
+            # cumsum_quantile_mat[:, i] = np.quantile(pi_x1_cumsum[:, i], quantile_values)
+        return pd.DataFrame(cumsum_quantile_mat, index=quantile_values), \
+               df_y_cond_xs
+        #       pd.DataFrame(x1_given_xs_quantile_mat, index=quantile_values)
+        # pi_mixture = np.reshape(pi_res @ mix_weights, [self.intervals_1dim] * p, order='F')
+        #
+        #
+        # axis_sums = 0 if p == 2 else tuple(np.arange(p - 1))
+        # pi_y_given_x = pi_mixture / np.reshape(np.tile(np.sum(pi_mixture, axis=tuple(np.arange(p - 1))),
+        #                                                self.intervals_1dim * (p - 1)), [self.intervals_1dim] * p,
+        #                                        order='F')
+        #
+        # np.sum(pi_mixture, axis=tuple(np.arange(p - 1)))
+

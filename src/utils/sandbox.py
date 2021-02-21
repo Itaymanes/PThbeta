@@ -2,13 +2,33 @@ from hBeta import PThBeta
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from utils.utils_func import load_database
+from preprocessing import apply_PCA_years
 
 arr = np.array([[i, j, k, f] for i in range(10) for j in range(10) for k in range(10) for f in range(10)])
 
 data_2d = pd.DataFrame(data={'a': np.random.normal(2, 4, (100,)), 'b': np.random.normal(0, 2, (100,))})
 data_2d = pd.DataFrame(data={'a': np.random.normal(0, 0.5, (100,)), 'b': np.random.normal(0, 0.3, (100,))})
-data_3d = pd.DataFrame(data={'a': np.random.normal(2, 4, (100,)), 'b': np.random.normal(0, 2, (100,)),
-                             'c': np.random.normal(20, 4, (100,))})
+data_3d = pd.DataFrame(data={'a': np.random.normal(2, 4, (1000,)), 'b': np.random.normal(100, 2, (1000,)),
+                             'c': np.random.normal(20, 4, (1000,))})
+#
+# mn = [0, -1]
+# sgma = [[1, 0], [0, 1]]  # diagonal covariance
+# d_mvn_sim = pd.DataFrame(np.random.multivariate_normal(mn, sgma, 1000))
+#
+# pt = PThBeta(seg_1dim=3)
+# order = [1, 0, 0, 1]
+# n_pts = 1000
+# pi_map_sample, map_seg_pdist, freq = pt.pi_hBeta_sampler(d_mvn_sim, n_pts=n_pts, gamma=0.1, a_0=1,
+#                                                          sup_01=False) #true
+# pi_mixture = pt.comp_pi_post_mean(pi_map_sample, map_seg_pdist)
+# pred_sample = pt.pred_map_sample(pi_map_sample, map_seg_pdist, n_samples=n_pts)
+# print("a0=1 :{}".format(pt.arr_med.T @ pi_mixture))
+#
+# pt.plot_sampler_grid(d_mvn_sim, pred_sample)
+# cumsum_y_given_x, y_given_x = pt.quantile_conditional_distribution(pi_map_sample, map_seg_pdist, np.array([0.25, 0.5, 0.75]))
+
+
 
 data_mvn_check2 = pd.DataFrame(
     np.array([[0.87580503, 0.581028579], [0.09047127, 0.030183940], [0.70096576, 0.305379390],
@@ -30,32 +50,92 @@ data_mvn_check = pd.DataFrame(
 
 # data_mvn_check = pd.DataFrame(np.random.multivariate_normal([0, -1], cov=[[1, 0.8],[0.8, 1]], size = 200))
 
+n_pts = 1000
+##### 3d #####
 pt = PThBeta(seg_1dim=2)
+pi_map_sample, map_seg_pdist, freq = pt.pi_hBeta_sampler(data_3d, n_pts=n_pts, a_0=0.1,
+                                                         sup_01=False)
+# pred_sample = pt.pred_map_sample(pi_map_sample, map_seg_pdist)
+# pt.plot_sampler_grid(data_3d, pred_sample)
+y_given_x = pt.conditional_expected(pi_map_sample, map_seg_pdist)
+pt.marginalizing_y(pi_map_sample, map_seg_pdist)
+# # cumsum_y_given_x, y_given_x = pt.quantile_conditional_distribution(pi_map_sample, map_seg_pdist, np.array([0.25, 0.5, 0.75]))
+
+##########
+pt = PThBeta(seg_1dim=3)
 # pt.set_int_coords(data=data_mvn_check, sup_01=True, plot=True, gamma=0.05)
 order = [1, 0, 0, 1]
-n_pts = 1000
 # T = pt.segment_trees(order, data_mvn_check.shape[1])
 # d2, d2_trees = pt.segment_trees_all_options()
 # d2_df = pd.DataFrame.from_dict(d2, orient='index')
 
-pi_map_sample, map_seg_pdist, freq = pt.pi_hBeta_sampler(data_mvn_check, n_pts=n_pts, gamma=0.1, a_0=1,
-                                                         sup_01=True)
+# pi_map_sample, map_seg_pdist, freq = pt.pi_hBeta_sampler(data_mvn_check, n_pts=n_pts, gamma=0.3, a_0=1,
+#                                                          sup_01=True) #true
+pi_map_sample, map_seg_pdist, freq = pt.pi_hBeta_sampler(pd.DataFrame(np.fliplr(data_mvn_check)), n_pts=n_pts,
+                                                         gamma=0.3, a_0=1,
+                                                         sup_01=True) #true
 pi_mixture = pt.comp_pi_post_mean(pi_map_sample, map_seg_pdist)
-pred_sample = pt.pred_map_sample(pi_map_sample, map_seg_pdist)
+pred_sample = pt.pred_map_sample(pi_map_sample, map_seg_pdist, n_samples=n_pts)
+pred_y_x = pt.quantile_conditional(pi_map_sample, map_seg_pdist)
 print("a0=1 :{}".format(pt.arr_med.T @ pi_mixture))
 
-pt.plot_sampler_grid(data_mvn_check, pred_sample)
+# pt.plot_sampler_grid(data_mvn_check, pred_sample)
+pt.plot_sampler_grid(data_mvn_check, np.fliplr(pred_sample))
+pt.marginalizing_y(pi_map_sample, map_seg_pdist)
+
+y_given_x = pt.conditional_expected(pi_map_sample, map_seg_pdist)
+
+# cumsum_y_given_x, y_given_x = pt.quantile_conditional_distribution(pi_map_sample, map_seg_pdist, np.array([0.25, 0.5, 0.75]))
+
+### plots y_given_x:
+plt.subplots()
+plt.scatter(x=pred_sample[:, 1], y=pred_sample[:, 0], alpha=0.1, c='b')
+plt.scatter(x=np.fliplr(data_mvn_check)[:, 1], y=np.fliplr(data_mvn_check)[:, 0], alpha=0.6, c='r')
+
+plt.plot(y_given_x.iloc[:, 1], y_given_x.iloc[:, 0], 'b')
+# plt.plot(pd.unique(pt.arr_med[:, 0]), y_given_x.iloc[1, :], 'b')
+# plt.plot(pd.unique(pt.arr_med[:, 0]), y_given_x.iloc[0, :], 'k', '--')
+# plt.plot(pd.unique(pt.arr_med[:, 0]), y_given_x.iloc[2, :], 'k', '--')
+plt.xlim([-0.02, 1.02])
+plt.ylim([-0.02, 1.02])
+
+
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+data_df = pd.DataFrame(np.fliplr(data_mvn_check), columns = ['y', 'X'])
+sorted_ind = data_df.sort_values(by='X').index
+pred_df = pd.DataFrame(pred_sample, columns = ['y', 'X'])
+mod = smf.quantreg('y ~ X', pred_df)
+for q in [0.25, 0.5, 0.75]:
+    res = mod.fit(q=q)
+    re_pred = res.predict()
+    plt.plot(pred_df['X'], re_pred, 'g')
+    # plt.plot(data_df.iloc[sorted_ind, 1], re_pred[sorted_ind], 'g')
+
+
+plt.scatter(x=pd.unique(pt.arr_med[:, 0]), y=cumsum_y_given_x.iloc[1, :], c='b')
+plt.scatter(x=pd.unique(pt.arr_med[:, 0]), y=cumsum_y_given_x.iloc[0, :], c='k',marker='*')
+plt.scatter(x=pd.unique(pt.arr_med[:, 0]), y=cumsum_y_given_x.iloc[2, :], c='k',marker='*')
+
 
 borders = np.linspace(0, 1, pt.I)
 fig, ax = plt.subplots()
 plt.plot(np.arange(pt.I) + 0.5, pi_mixture)
 
-##### 3d #####
-pi_map_sample, map_seg_pdist, freq = pt.pi_hBeta_sampler(data_3d, n_pts=n_pts, a_0=0.1,
-                                                         sup_01=False)
-pred_sample = pt.pred_map_sample(pi_map_sample, map_seg_pdist)
-pt.plot_sampler_grid(data_3d, pred_sample)
 
+
+#####################
+# Dengue
+X, y, a = load_database(data='sj')
+df_pca, pca = apply_PCA_years(y, n_comp=2, transform='square_root', plot=False, save=False)
+
+pt = PThBeta(seg_1dim=4)
+pi_map_sample, map_seg_pdist, freq = pt.pi_hBeta_sampler(df_pca, n_pts=1000, gamma=0.2,
+                                                         a_0=0.1, sup_01=False)
+pred_sample = pt.pred_map_sample(pi_map_sample, map_seg_pdist, n_samples=1000)
+pt.plot_sampler_grid(df_pca, pred_sample, title='sj' + '_full data')
+cumsum_y_given_x, y_given_x = pt.quantile_conditional_distribution( pi_map_sample, map_seg_pdist, np.array([0.25, 0.5, 0.75]))
+y_rng = np.max(pt.arr_vec[:,1]) - np.min(pt.arr_vec[:,1])
 
 # pi_mixture = pt.comp_pi_post_mean(pi_map_sample, map_seg_pdist)
 # print("a0=0.1 :{}".format(pt.arr_med.T @ pi_mixture))
@@ -96,9 +176,9 @@ pt.plot_sampler_grid(data_3d, pred_sample)
 #
 #
 #
-from scipy.stats import multivariate_normal
-mn = [0, -1]
-sgma = [[1, 0.8], [0.8, 1]]  # diagonal covariance
-var = multivariate_normal(mean=mn, cov=sgma)
+# from scipy.stats import multivariate_normal
+# mn = [0, -1]
+# sgma = [[1, 0.8], [0.8, 1]]  # diagonal covariance
+# var = multivariate_normal(mean=mn, cov=sgma)
 #
 # x, y = np.random.multivariate_normal(mn, sgma, 10).T

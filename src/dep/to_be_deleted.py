@@ -76,3 +76,29 @@ def test(x):
         y += 1
     return y
 
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+np.random.seed(0)
+rand_uni = np.random.uniform([0, 0], [1, 1], size=(10000, 2))
+rot_mat = np.array([[1, 1], [-1, 1]])
+rand_rot = (rot_mat @ rand_uni.T).T
+
+plt.scatter(rand_uni[:, 0], rand_uni[:, 1])
+plt.scatter(rand_rot[:, 0], rand_rot[:, 1])
+
+# p = rand_uni[:, 0] * rand_uni[:, 1] + 0.5 * ((rand_rot[:, 0] < 1) & (rand_rot[:, 1] > 0))
+# p = 0.5 + 0.5 * ((rand_rot[:, 0] < 1) & (rand_rot[:, 1] > 0))
+p = np.maximum(0, np.minimum(1, np.exp(-rand_rot[:, 0]+rand_rot[:, 1]) + 0.5 * ((rand_rot[:, 0] < 1) & (rand_rot[:, 1] > 0))))
+
+np.random.seed(0)
+a = np.random.binomial(1, p)
+
+df = pd.DataFrame({'x1': rand_rot[:, 0], 'x2': rand_rot[:, 1], 'a': a})
+sns.scatterplot(data=df, x='x1', y='x2', hue='a')
+
+plt.subplots()
+sns.jointplot(data=df, x='x1', y='x2', hue='a')

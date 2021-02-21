@@ -1,10 +1,23 @@
 import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
+from lalonde import _load_lalonde, _subset_load_lalonde
 from pandas import ExcelWriter
+
 DIR = 'C:\\Users\\itaym\\Google Drive\\University - Itay\\Msc\\Thesis\\Epi\\Data\\Competition\\Stations_org\\'
 
+def _sim_square_pos(seed=0):
+    np.random.seed(seed)
+    rand_uni = np.random.uniform([0, 0], [1, 1], size=(2000, 2))
+    rot_mat = np.array([[1, 1], [-1, 1]])
+    rand_rot = (rot_mat @ rand_uni.T).T
 
+    # p = rand_uni[:, 0] * rand_uni[:, 1] + 0.5 * ((rand_rot[:, 0] < 1) & (rand_rot[:, 1] > 0))
+    p = 0.5 + 0.5 * ((rand_rot[:, 0] < 1) & (rand_rot[:, 1] > 0))
+    a = np.random.binomial(1, p)
+
+    df = pd.DataFrame({'x1': rand_rot[:, 0], 'x2': rand_rot[:, 1], 'a': a})
+    return df.loc[:, ['x1', 'x2']], df['a']
 
 def load_database(data='sj'):
     """
@@ -18,6 +31,7 @@ def load_database(data='sj'):
     mn = [0, -1, 1]
     sgma = [[1, 0.8, 0.5], [0.8, 1, 0.7], [0.5, 0.7, 1]]  # diagonal covariance
     x_tr = 0
+    print("data of {} will be loaded".format(data))
     if data == 'sj':
         x_tr = pd.read_csv(DIR + 'x_tr_sj.csv')
         y_tr = pd.read_csv(DIR + 'y_tr_sj.csv')
@@ -28,8 +42,15 @@ def load_database(data='sj'):
         y_tr = pd.DataFrame(np.random.multivariate_normal(mn, sgma, 20))
     elif data == 'mvn100':
         y_tr = pd.DataFrame(np.random.multivariate_normal(mn, sgma, 100))
-    print("data of {} will be loaded".format(data))
-    return x_tr, y_tr
+    elif data == 'square_pos':
+        x_tr, y_tr = _sim_square_pos()
+    elif data == 'lalonde':
+        x_tr, y_tr, a_tr = _load_lalonde()
+        return x_tr, y_tr, a_tr
+    elif data == 'sub_lalonde':
+        x_tr, y_tr, a_tr = _subset_load_lalonde()
+        return x_tr, y_tr, a_tr
+    return x_tr, y_tr, None
 
 
 def _transform(y, trans='org'):
@@ -89,5 +110,5 @@ def sample_pca_residuals_distribution(df_epi_year, n_comp, trans, n_pts, res_met
 def save_xls(list_dfs, xls_path):
     with ExcelWriter(xls_path) as writer:
         for n, df in enumerate(list_dfs):
-            df.to_excel(writer, str(1990+n))
+            df.to_excel(writer, str(1990 + n))
         writer.save()
